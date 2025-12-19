@@ -190,6 +190,37 @@ async def generate_anki():
             status_code=500, detail=f"Error generating Anki deck: {str(e)}")
 
 
+@app.get("/generate-anki-known")
+async def generate_anki_known():
+    """
+    Generate an Anki deck from the current known words list.
+    """
+    known_words = load_known_words()
+    if not known_words:
+        raise HTTPException(
+            status_code=400, detail="No known words available. Please import or add known words first.")
+
+    # Map to vocab-like structure expected by the generator
+    vocab_list = [
+        {"word": word, "frequency": 1, "context": word}
+        for word in known_words
+    ]
+
+    try:
+        apkg_bytes = create_anki_deck_bytes(vocab_list)
+
+        return StreamingResponse(
+            io.BytesIO(apkg_bytes),
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": "attachment; filename=Known_Words.apkg"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error generating Anki deck from known words: {str(e)}")
+
+
 @app.get("/known-words")
 async def get_known_words():
     """
