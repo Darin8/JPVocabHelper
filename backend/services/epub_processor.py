@@ -65,8 +65,8 @@ def get_vocab_with_context(chapters, known_words, limit=2000):
     word_info = {}  # Format: { "word": [count, "example sentence"] }
 
     for text in chapters:
-        # Split into sentences using Japanese punctuation
-        sentences = re.split(r'(?<=[。！？])', text)
+        # Split into sentences using Japanese punctuation, including closing quotes
+        sentences = re.split(r'(?<=[。！？」])', text)
 
         for sentence in sentences:
             sentence = sentence.strip()
