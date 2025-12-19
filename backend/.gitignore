@@ -1,0 +1,21 @@
+# Storage files (uncomment if you want to ignore storage data)
+# data/
+# *.db
+# *.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
