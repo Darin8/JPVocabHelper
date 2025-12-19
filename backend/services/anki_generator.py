@@ -2,7 +2,6 @@ import genanki
 import tempfile
 import os
 from jamdict import Jamdict
-from tqdm import tqdm
 from typing import List, Dict
 
 # Initialize Dictionary
@@ -52,7 +51,7 @@ def create_anki_deck_bytes(vocab_list: List[Dict[str, any]]) -> bytes:
     """
     my_deck = genanki.Deck(2059400110, 'Japanese Vocabulary')
 
-    for item in tqdm(vocab_list, desc="Adding Definitions & Creating Cards", disable=True):
+    for item in vocab_list:
         word = item['word']
         frequency = str(item['frequency'])
         context = item['context']
@@ -78,17 +77,16 @@ def create_anki_deck_bytes(vocab_list: List[Dict[str, any]]) -> bytes:
     # Write to temporary file, then read as bytes
     with tempfile.NamedTemporaryFile(delete=False, suffix='.apkg') as tmp_file:
         tmp_path = tmp_file.name
-    
+
     try:
         package = genanki.Package(my_deck)
         package.write_to_file(tmp_path)
-        
+
         with open(tmp_path, 'rb') as f:
             apkg_bytes = f.read()
-        
+
         return apkg_bytes
     finally:
         # Clean up temp file
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
-

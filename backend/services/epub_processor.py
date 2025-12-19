@@ -4,7 +4,7 @@ import ebooklib
 from ebooklib import epub
 from janome.tokenizer import Tokenizer
 import lxml.html
-from tqdm import tqdm
+import hashlib
 
 # Initialize constants
 TOKENIZER = Tokenizer()
@@ -16,16 +16,32 @@ def extract_chapters_from_epub(epub_path):
     """Extracts raw text from each chapter and returns a list of strings."""
     book = epub.read_epub(epub_path)
     chapters = []
+    seen_hashes = set()  # Store fingerprints of text
 
     items = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-    for item in tqdm(items, desc="Extracting Chapters", disable=True):  # Disable progress bar for API
+    for item in items:
         content = item.get_content()
         if not content:
             continue
         tree = lxml.html.fromstring(content)
+
+        # Find all <rt> tags (the small hiragana above kanji) and remove them
+        for rt in tree.xpath('.//rt'):
+            rt.getparent().remove(rt)
+
         text = tree.text_content().strip()
-        if text:
-            chapters.append(text)
+        if not text:
+            continue
+
+        # Create a unique fingerprint for this text block
+        text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+
+        if text_hash in seen_hashes:
+            # We've seen this exact content before (e.g. a duplicate file)
+            continue
+
+        seen_hashes.add(text_hash)
+        chapters.append(text)
     return chapters
 
 
@@ -48,7 +64,7 @@ def get_vocab_with_context(chapters, known_words, limit=2000):
     """Processes text to find frequencies and a sample sentence for each word."""
     word_info = {}  # Format: { "word": [count, "example sentence"] }
 
-    for text in tqdm(chapters, desc="Analyzing Japanese", disable=True):  # Disable progress bar for API
+    for text in chapters:
         # Split into sentences using Japanese punctuation
         sentences = re.split(r'(?<=[。！？])', text)
 
@@ -79,4 +95,3 @@ def get_vocab_with_context(chapters, known_words, limit=2000):
     sorted_vocab = sorted(
         word_info.items(), key=lambda x: x[1][0], reverse=True)
     return sorted_vocab[:limit]
-
